@@ -1,15 +1,8 @@
----
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
-```{r}
 library(tidyverse)
 library(GillespieSSA2)
 library(ggplot2)
-```
 
-```{r echo=TRUE}
+
 rm(list = ls())
 
 simulations <- function() {
@@ -89,9 +82,8 @@ ggplot(avg_results, aes(x = time, y = avg_value, color = variable)) +
   labs(title = "Averaged SSA Simulation Results",
        x = "Time",
        y = "Average Value") 
-```
 
-```{r echo=TRUE}
+
 # Plotting a single variable in this case p53P
 # Extract only the p53P variable columns
 p53P_results <- avg_results %>%
@@ -103,5 +95,3 @@ ggplot(p53P_results, aes(x = time, y = avg_value)) +
   labs(title = "Average phosforylated p53 concentration",
        x = "Time",
        y = "Average p53P")
-```
-
