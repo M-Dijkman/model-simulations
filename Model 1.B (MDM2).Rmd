@@ -1,17 +1,9 @@
----
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
-```{r}
 library(tidyverse)
 library(GillespieSSA2)
 library(ggplot2)
 library(dplyr)
 
-```
 
-```{r echo=TRUE}
 #rm(list = ls())
 
 # Define initial states
@@ -69,9 +61,8 @@ out <- ssa(
 
 # Plot SSA function
 plot_ssa(out,geom = c("step"))
-```
 
-```{r echo=TRUE}
+
 # Plotting a single variable in this case p53P
 # Extract the desired elements from the SSA list
 state <- out$state
@@ -87,4 +78,3 @@ ggplot(df_out, aes(x = time, y = state.p53P)) +
   labs(title = "Phosforylated p53P",
        x = "time",
        y = "p53P") + theme_minimal()
-```
