@@ -1,16 +1,10 @@
----
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
-```{r}
+
 library(tidyverse)
 library(GillespieSSA2)
 library(GA)
 library(doParallel)
-```
 
-```{r}
+
 rm(list = ls()) # clear environment
 
 # Define initial states
@@ -64,16 +58,15 @@ objective_function <- function(params) {
   # Extract p21 data
   p21_data <- out %>% filter(variable == "p21")
   
-  # Calculate the objective metric based on desired behavior
+  # Calculate the objective metric based on the desired behavior
   oscillation_metric <- sd(p21_data$value)
   trend_metric <- mean(diff(p21_data$value))
   combined_metric <- oscillation_metric + abs(trend_metric)
   
   return(-combined_metric)
 }
-```
 
-```{r}
+
 # Define parameter bounds
 lower_bounds <- c(0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001)
 upper_bounds <- c(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10)
@@ -97,4 +90,3 @@ best_params <- ga_result@solution
 
 # Print the best parameters
 print(best_params)
-```
