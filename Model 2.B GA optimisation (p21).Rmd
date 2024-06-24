@@ -1,16 +1,9 @@
----
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
-```{r}
 library(tidyverse)
 library(GillespieSSA2)
 library(GA)
 library(doParallel)
-```
 
-```{r}
+
 rm(list = ls()) # clear enviroment
 
 # Define initial states
@@ -71,9 +64,8 @@ objective_function <- function(params) {
     return(-combined_metric)
 
 }
-```
 
-```{r}
+
 # Define parameter bounds
 lower_bounds <- c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
 upper_bounds <- c(1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000)
@@ -117,6 +109,3 @@ best_params <- all_solutions[best_index, ]
 # Print the best parameters and their fitness value
 print(best_params)
 print(all_fitness[best_index])
-
-```
-
