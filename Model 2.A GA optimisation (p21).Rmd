@@ -23,7 +23,6 @@ objective_function <- function(params) {
 
   names(params) <- param_names
 
-  
   reactions1 <- list(
     reaction(~params["CP_DD"], c(DD = +1), name = "Prod_DD"),
     reaction(~params["CD_DD"] * p53P, c(DD = -1), name = "Decay_DD"),
