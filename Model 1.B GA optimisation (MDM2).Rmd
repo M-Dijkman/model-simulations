@@ -1,11 +1,9 @@
-```{r}
 library(tidyverse)
 library(GillespieSSA2)
 library(GA)
 library(doParallel)
-```
 
-```{r}
+
 #rm(list = ls()) # clear enviroment
 
 # Define initial states
@@ -58,9 +56,8 @@ objective_function <- function(params) {
   
   return(-oscillation_metric)
 }
-```
 
-```{r}
+
 # Define parameter bounds
 lower_bounds <- c(0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001)
 upper_bounds <- c(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10)
@@ -92,4 +89,3 @@ best_params <- all_solutions[best_index, ]
 # Print the best parameters and their fitness value
 print(best_params)
 print(all_fitness[best_index])
-```
