@@ -1,0 +1,90 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+library(tidyverse)
+library(GillespieSSA2)
+library(ggplot2)
+library(dplyr)
+
+```
+
+```{r echo=TRUE}
+#rm(list = ls())
+
+# Define initial states
+ini_state <- c(
+  S = 15, 
+  DD = 10, 
+  p53 = 10, 
+  p53P = 10,
+  MDM2 = 15
+)
+
+# Define parameters 
+parms <- c(
+  CP_DD = 8.89550362,        
+  CD_DD = 2.82600077, 
+  CP_p53 = 5.47504722,
+  dephos = 9.03410545, 
+  phos = 6.88752248, 
+  CD_p53 = 9.03410545, 
+  CD_p53_MDM2 =  4.61270449,
+  CD_p53P = 3.45737907,
+  CD_p53P_MDM2 = 8.55691123,
+  CP_MDM2 = 0.06171641,
+  CD_MDM2 = 8.94995013,
+  CD_MDM2_p53P = 8.97424401
+) 
+          
+# Define reactions
+reactions <- list(
+  reaction(~CP_DD, c(DD = +1), name = "Prod_DD"),
+  reaction(~CD_DD * p53P * DD, c(DD = -1), name = "Decay_DD"),
+  reaction(~S, c(DD = +1), name = "S_in_DD"), 
+  reaction(~CP_p53 * DD, c(p53 = +1), name = "Prod_p53"),
+  reaction(~CD_p53 * p53, c(p53 = -1), name = "Decay_p53"),
+  reaction(~CD_p53_MDM2 * p53 * MDM2, c(p53 = -1), name = "Inhibition_p53_MDM2"),
+  reaction(~phos * p53 * DD, c(p53 = -1, p53P = +1), name = "Phos_p53"),
+  reaction(~dephos * p53P, c(p53P = -1, p53 = +1), name = "Dephos_p53P"),
+  reaction(~CD_p53P * p53P, c(p53P = -1), name = "Decay_p53P"),
+  reaction(~CD_p53P_MDM2 * p53P * MDM2, c(p53P = -1), name = "Inhibition_p53P_MDM2"),
+  reaction(~CP_MDM2 * p53P, c(MDM2 = +1), name = "Prod_MDM2"),
+  reaction(~CD_MDM2 * MDM2, c(MDM2 = -1), name = "Decay_MDM2")
+)
+
+# Simulate the model
+out <- ssa(
+  initial_state = ini_state,
+  reactions = reactions,
+  params = parms,
+  method = ssa_exact(),
+  final_time = 24,
+  census_interval = 0.001,
+  verbose = TRUE,
+  sim_name = "p53P_model"
+)
+
+# Plot SSA function
+plot_ssa(out,geom = c("step"))
+```
+
+```{r echo=TRUE}
+# Plotting a single variable in this case p53P
+# Extract the desired elements from the SSA list
+state <- out$state
+time <- out$time
+
+# Create a data frame with only the colums time and p53P
+df_out <- data.frame(state = out$state, time = out$time) %>%
+  select(-state.S, -state.DD, -state.p53)
+
+# Create the plot of the subsetted data
+ggplot(df_out, aes(x = time, y = state.p53P)) +
+  geom_smooth(colour="blue") +
+  labs(title = "Phosforylated p53P",
+       x = "time",
+       y = "p53P") + theme_minimal()
+```

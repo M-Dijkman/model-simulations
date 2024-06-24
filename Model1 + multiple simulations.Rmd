@@ -1,0 +1,107 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+library(tidyverse)
+library(GillespieSSA2)
+library(ggplot2)
+```
+
+```{r echo=TRUE}
+rm(list = ls())
+
+simulations <- function() {
+
+# Define initial states
+ini_state <- c(
+  S = 10, 
+  DD = 10, 
+  p53 = 10, 
+  p53P = 10
+)
+
+# Define parameters 
+parms <- c(
+  CP_DD = 6.4792869,        
+  CD_DD = 2.82600078, 
+  CP_p53 = 8.5377800,
+  dephos = 5.475047216, 
+  phos = 3.0121241, 
+  CD_p53 = 9.03410545, 
+  CD_p53P = 4.18727292
+  
+)
+
+# Define reactions
+reactions <- list(
+  reaction(~CP_DD, c(DD = +1), name = "Prod_DD"),
+  reaction(~CD_DD * p53P, c(DD = -1), name = "Decay_DD"),
+  reaction(~S, c(DD = +1), name = "S_in_DD"), 
+  reaction(~CP_p53 * DD, c(p53 = +1), name = "Prod_p53"),
+  reaction(~CD_p53 * p53, c(p53 = -1), name = "Decay_p53"),
+  reaction(~phos * p53 * DD, c(p53 = -1, p53P = +1), name = "Phos_p53"),
+  reaction(~dephos * p53P, c(p53P = -1, p53 = +1), name = "Dephos_p53P"),
+  reaction(~CD_p53P * p53P, c(p53P = -1), name = "Decay_p53P")
+)
+
+# Simulate the model
+out <- ssa(
+  initial_state = ini_state,
+  reactions = reactions,
+  params = parms,
+  method = ssa_exact(),
+  final_time = 24,
+  census_interval = 0.001,
+  verbose = TRUE,
+  sim_name = "p53P_No_MDM2"
+)
+
+data.frame(out$state, time = out$time)
+}
+# Plot SSA function
+#plot_ssa(out,geom = c("step"))
+
+# Run the simulation multiple times and store results
+num_runs <- 500
+results_list <- vector("list", num_runs)
+
+for (i in 1:num_runs) {
+  results_list[[i]] <- simulations()
+}
+
+# Combine and average results
+combined_results <- bind_rows(results_list, .id = "run")
+
+# Reshape data to long format for averaging
+long_results <- combined_results %>%
+  pivot_longer(cols = -c(run, time), names_to = "variable", values_to = "value")
+
+# Calculate average values for each variable at each time point
+avg_results <- long_results %>%
+  group_by(time, variable) %>%
+  summarise(avg_value = mean(value), .groups = 'drop')
+
+# Plot the averaged results for all variables
+ggplot(avg_results, aes(x = time, y = avg_value, color = variable)) +
+  geom_line() +
+  labs(title = "Averaged SSA Simulation Results",
+       x = "Time",
+       y = "Average Value") 
+```
+
+```{r echo=TRUE}
+# Plotting a single variable in this case p53P
+# Extract only the p53P variable columns
+p53P_results <- avg_results %>%
+  filter(variable == "p53P")
+
+# Create the plot of the subsetted data
+ggplot(p53P_results, aes(x = time, y = avg_value)) +
+  geom_smooth(colour="red") +
+  labs(title = "Average phosforylated p53 concentration",
+       x = "Time",
+       y = "Average p53P")
+```
+

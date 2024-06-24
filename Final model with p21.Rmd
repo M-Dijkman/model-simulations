@@ -1,0 +1,155 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(GillespieSSA2)
+library(ggplot2)
+library(dplyr)
+
+```
+
+```{r echo=TRUE}
+#rm(list = ls())
+
+simulations <- function() {
+# Define initial states
+ini_state <- c(
+  S = 15, 
+  DD = 10, 
+  p53 = 10, 
+  p53P = 17,
+  MDM2 = 10,
+  p21_mRNA = 3.5,
+  p21 = 4
+)
+
+# Define parameters 
+parms <- c(
+  CP_DD = 8.89550362,        
+  CD_DD = 2.82600077, 
+  CP_p53 = 5.47504722,
+  phos = 6.88752248, 
+  dephos = 9.03410545, 
+  CD_p53 = 9.03410545, 
+  CD_p53_MDM2 =  4.61270449,
+  CD_p53P = 3.45737907,
+  CD_p53P_MDM2 = 8.55691123,
+  CP_MDM2 = 0.06171641,
+  CD_MDM2 = 8.94995013,
+  CD_MDM2_p53P = 8.97424401,
+  CP_p21_mRNA = 7.584054,
+  CD_p21_mRNA = 4.812704,
+  CP_p21 = 3.122643,
+  CD_p21 = 3.057379
+)     
+          
+# Define reactions
+reactions <- list(
+  reaction(~CP_DD, c(DD = +1), name = "Prod_DD"),
+  reaction(~CD_DD * p53P * DD, c(DD = -1), name = "Decay_DD"),
+  #reaction(~S, c(DD = +1), name = "S_in_DD"), 
+  reaction(~CP_p53 * DD, c(p53 = +1), name = "Prod_p53"),
+  reaction(~CD_p53 * p53, c(p53 = -1), name = "Decay_p53"),
+  reaction(~CD_p53_MDM2 * p53 * MDM2, c(p53 = -1), name = "Inhibition_p53_MDM2"),
+  reaction(~phos * p53 * DD, c(p53 = -1, p53P = +1), name = "Phos_p53"),
+  reaction(~dephos * p53P, c(p53P = -1, p53 = +1), name = "Dephos_p53P"),
+  reaction(~CD_p53P * p53P, c(p53P = -1), name = "Decay_p53P"),
+  reaction(~CD_p53P_MDM2 * p53P * MDM2, c(p53P = -1), name = "Inhibition_p53P_MDM2"),
+  reaction(~CP_MDM2 * p53, c(MDM2 = +1), name = "Prod_MDM2"),
+  reaction(~CD_MDM2 * MDM2, c(MDM2 = -1), name = "Decay_MDM2"),
+  reaction(~CP_p21_mRNA * p53P, c(p21_mRNA = +1), name = "Prod_p21_mRNA"),
+  reaction(~CD_p21_mRNA * p21_mRNA, c(p21_mRNA = -1), name = "Decay_p21_mRNA"),  
+  reaction(~CP_p21 * p21_mRNA, c(p21 = +1), name = "Prod_p21"),
+  reaction(~CD_p21 * p21, c(p21 = -1), name = "Decay_p21")
+)
+
+# Simulate the model
+out <- ssa(
+  initial_state = ini_state,
+  reactions = reactions,
+  params = parms,
+  method = ssa_exact(),
+  final_time = 24,
+  census_interval = 0.001,
+  verbose = TRUE,
+  sim_name = "p21_model"
+)
+data.frame(out$state, time = out$time)
+}
+# Plot SSA function
+#plot_ssa(out,geom = c("step"))
+
+# Run the simulation multiple times and store results
+num_runs <- 100
+results_list <- vector("list", num_runs)
+
+for (i in 1:num_runs) {
+  results_list[[i]] <- simulations()
+}
+
+# Combine and average results
+combined_results <- bind_rows(results_list, .id = "run")
+
+# Reshape data to long format for averaging
+long_results <- combined_results %>%
+  pivot_longer(cols = -c(run, time), names_to = "variable", values_to = "value")
+
+# Calculate average values for each variable at each time point
+avg_results <- long_results %>%
+  group_by(time, variable) %>%
+  summarise(avg_value = mean(value), .groups = 'drop')
+
+# Plot the averaged results for all variables
+ggplot(avg_results, aes(x = time, y = avg_value, color = variable)) +
+  geom_smooth() +
+  labs(title = "Averaged SSA Simulation Results",
+       x = "Time",
+       y = "Average Value") 
+```
+
+```{r echo=TRUE}
+# Plotting a single variable in this case p53P
+# Extract only the p53P variable columns
+p53P_results <- avg_results %>%
+  filter(variable == "p53P")
+
+# Create the plot of the subsetted data
+ggplot(p53P_results, aes(x = time, y = avg_value)) +
+  geom_smooth(colour="blue") +
+  labs(title = "Average phosphorylated p53 concentration",
+       x = "time",
+       y = "Average p53P")
+```
+
+```{r}
+# Plotting a single variable in this case p21 mRNA
+# Extract only the p53P variable columns
+p21_mRNA_results <- avg_results %>%
+  filter(variable == "p21_mRNA")
+
+# Create the plot of the subsetted data
+ggplot(p21_mRNA_results, aes(x = time, y = avg_value)) +
+  geom_smooth(colour="orange") +
+  labs(title = "Average p21 mRNA concentration",
+       x = "time",
+       y = "Average p21 mRNA")
+```
+
+```{r}
+# Plotting a single variable in this case p21 protein18
+# Extract only the p53P variable columns
+p21_results <- avg_results %>%
+  filter(variable == "p21")
+
+# Create the plot of the subsetted data
+ggplot(p21_results, aes(x = time, y = avg_value)) +
+  geom_smooth(colour="red") +
+  labs(title = "Average p21 protein concentration",
+       x = "time",
+       y = "Average p21 protein")
+```
+
