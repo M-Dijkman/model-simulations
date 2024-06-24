@@ -1,16 +1,8 @@
----
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
-```{r}
 library(tidyverse)
 library(GillespieSSA2)
 library(GA)
 library(doParallel)
-```
 
-```{r}
 rm(list = ls()) # clear environment
 
 # Define initial states
@@ -23,7 +15,7 @@ ini_state <- c(
   p21_mRNA = 0.8,
   p21 = 500
 )
-param_names <- c("CP_DD", "CD_DD", "CP_p53", "CD_p53", "CD_p53_MDM2", "phos", "dephos", "CD_p53P", "CD_p53P_MDM2", "CP_MDM2",     "CD_MDM2", "CP_p21_mRNA", "CD_p21_mRNA", "CP_p21", "CD_p21")
+param_names <- c("CP_DD", "CD_DD", "CP_p53", "CD_p53", "CD_p53_MDM2", "phos", "dephos", "CD_p53P", "CD_p53P_MDM2", "CP_MDM2", "CD_MDM2", "CP_p21_mRNA", "CD_p21_mRNA", "CP_p21", "CD_p21")
   
 # Define the new objective function based on p21 protein levels
 objective_function <- function(params) {
@@ -75,9 +67,7 @@ objective_function <- function(params) {
   
   return(-combined_metric)
 }
-```
 
-```{r}
 # Define parameter bounds
 lower_bounds <- c(0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001)
 upper_bounds <- c(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10)
