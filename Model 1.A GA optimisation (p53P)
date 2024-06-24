@@ -1,4 +1,3 @@
-```{r}
 library(tidyverse)
 library(GillespieSSA2)
 library(GA)
@@ -49,9 +48,8 @@ objective_function <- function(params) {
   
   return(-oscillation_metric)
 }
-```
 
-```{r}
+
 # Define parameter bounds
 lower_bounds <- c(0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001)
 upper_bounds <- c(10, 10, 10, 10, 10, 10, 10, 10)
@@ -76,4 +74,3 @@ names(best_params) <- c("CP_DD", "CD_DD", "CP_p53", "CD_p53", "phos", "dephos", 
 
 # Print the best parameters
 print(best_params)
-```
