@@ -9,7 +9,6 @@ library(dplyr)
 simulations <- function() {
 # Define initial states
 ini_state <- c(
-  S = 15, 
   DD = 10, 
   p53 = 10, 
   p53P = 17,
