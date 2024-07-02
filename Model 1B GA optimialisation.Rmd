@@ -1,0 +1,95 @@
+```{r}
+library(tidyverse)
+library(GillespieSSA2)
+library(GA)
+library(doParallel)
+```
+
+```{r}
+#rm(list = ls()) # clear enviroment
+
+# Define initial states
+ini_state <- c(
+  S = 10, 
+  DD = 20, 
+  p53 = 30, 
+  p53P = 10,
+  MDM2 = 10
+)
+
+# Define the objective function
+objective_function <- function(params) {
+  param_names <- c("CP_DD", "CD_DD", "CP_p53", "CD_p53", "CD_p53_MDM2", "phos", "dephos", "CD_p53P", "CD_p53P_MDM2", "CP_MDM2", "CD_MDM2")
+  names(params) <- param_names
+
+  reactions1 <- list(
+    reaction(~params["CP_DD"], c(DD = +1), name = "Prod_DD"),
+    reaction(~params["CD_DD"] * p53P, c(DD = -1), name = "Decay_DD"),
+    reaction(~S, c(DD = +1), name = "S_in_DD"), 
+    reaction(~params["CP_p53"] * DD, c(p53 = +1), name = "Prod_p53"),
+    reaction(~params["CD_p53"] * p53, c(p53 = -1), name = "Decay_p53"),
+    reaction(~params["CD_p53_MDM2"] * p53 * MDM2, c(p53 = -1), name = "Inhibition_p53_MDM2"),
+    reaction(~params["phos"] * p53 * DD, c(p53 = -1, p53P = +1), name = "Phos_p53"),
+    reaction(~params["dephos"] * p53P, c(p53P = -1, p53 = +1), name = "Dephos_p53P"),
+    reaction(~params["CD_p53P"] * p53P, c(p53P = -1), name = "Decay_p53P"),
+    reaction(~params["CD_p53P_MDM2"] * p53P * MDM2, c(p53P = -1), name = "Inhibition_p53P_MDM2"),
+    reaction(~params["CP_MDM2"] * p53, c(MDM2 = +1), name = "Prod_MDM2"),
+    reaction(~params["CD_MDM2"] * DD * MDM2, c(MDM2 = -1), name = "Decay_MDM2")
+)
+  
+  out <- tryCatch({
+    ssa(
+      initial_state = ini_state,
+      reactions = reactions1,
+      params = params,
+      method = ssa_exact(),
+      final_time = 24,
+      census_interval = .01,
+      verbose = FALSE
+    )
+  }, error = function(e) {
+    return(NULL)
+  })
+  
+  if (is.null(out)) return(Inf)
+  
+  p53P_data <- out %>% filter(variable == "p53P")
+  oscillation_metric <- sd(p53P_data$value)
+  
+  return(-oscillation_metric)
+}
+```
+
+```{r}
+# Define parameter bounds
+lower_bounds <- c(0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001)
+upper_bounds <- c(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10)
+
+# Run the Genetic Algorithm optimization
+ga_result <- ga(
+  type = "real-valued",
+  fitness = objective_function,
+  lower = lower_bounds,
+  upper = upper_bounds,
+  popSize = 200,
+  maxiter = 200,
+  run = 200,
+  keepBest = TRUE,
+  parallel = TRUE, #parallel for efficiency,
+  seed = 123  # Set a seed for reproducibility
+)
+
+# Extract all solutions and their fitness values
+all_solutions <- ga_result@population
+all_fitness <- ga_result@fitness
+
+# Find the index of the best fitness value
+best_index <- which.max(all_fitness)
+
+# Extract the best parameters
+best_params <- all_solutions[best_index, ]
+
+# Print the best parameters and their fitness value
+print(best_params)
+print(all_fitness[best_index])
+```
